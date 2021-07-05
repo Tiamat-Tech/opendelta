@@ -1,8 +1,10 @@
+mod image;
+
 use std::fs::File;
 use std::mem;
 use std::path::Path;
 
-use minifb::{Key, Window, WindowOptions};
+use minifb::{Key, ScaleMode, Window, WindowOptions};
 
 // PCX renderer
 // http://bespin.org/~qz/pc-gpe/pcx.txt
@@ -31,56 +33,46 @@ fn main() {
         reader.is_paletted()
     );
 
-    let row_buf_size: u32 = reader.width() as u32;
-    let file_buf_size: u32 = row_buf_size * reader.height() as u32;
+    let mut pcx_buf: Vec<u8> = Vec::new();
 
-    let mut row_buf = vec![0; row_buf_size as usize];
-    let mut pcx_buf: Vec<u8> = vec![0; file_buf_size as usize];
-
-    for y in 0..reader.height() {
+    for _ in 0..reader.height() {
         if reader.is_paletted() {
-            reader.next_row_paletted(&mut row_buf);
+            let mut row_buf = vec![0; reader.width() as usize];
+            reader.next_row_paletted(&mut row_buf).unwrap();
             pcx_buf.append(&mut row_buf.clone());
         } else {
             // call reader.next_row_rgb(...) or reader.next_row_rgb_separate(...) to read next row
         }
     }
 
-    let WIDTH: usize = reader.width() as usize;
-    let HEIGHT: usize = reader.height() as usize;
+    let u32_buffer: Vec<u32> = pcx_buf
+        .chunks_exact(3)
+        .map(|v| ((v[0] as u32) << 16) | ((v[1] as u32) << 8) | v[2] as u32)
+        .collect();
 
-    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
+    let width: usize = (reader.width()) as usize;
+    let height: usize = (u32_buffer.len() as f32 / width as f32) as usize;
+    let _buf_size = width * height;
 
-    let mut window = Window::new("Open Delta", WIDTH, HEIGHT, WindowOptions::default())
-        .unwrap_or_else(|e| {
-            panic!("{}", e);
-        });
-    // Limit to max ~60 fps update rate
+    let mut window = Window::new(
+        "Open Delta",
+        (width as f32 / 3 as f32) as usize,
+        height,
+        WindowOptions {
+            resize: true,
+            scale_mode: ScaleMode::Center,
+            ..WindowOptions::default()
+        },
+    )
+    .unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
+
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let mut pcx_iter = 0;
-
-        for i in buffer.iter_mut() {
-            // dark orange
-            // let r = 50;
-            // let g = 168;
-            // let b = 82;
-
-            if (pcx_iter + 3 > pcx_buf.len()) {
-                break;
-            }
-
-            let r: u32 = pcx_buf[pcx_iter] as u32;
-            let g: u32 = pcx_buf[pcx_iter + 1] as u32;
-            let b: u32 = pcx_buf[pcx_iter + 2] as u32;
-
-            *i = r << 16 | g << 8 | b;
-
-            pcx_iter += 2;
-        }
-
-        // window.update
-        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+        window
+            .update_with_buffer(&u32_buffer, width, height)
+            .unwrap();
     }
 }

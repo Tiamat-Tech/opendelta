@@ -3,3 +3,4 @@
 Cargo.lock
 data/Terrains.pff
 .idea/
+.vscode/

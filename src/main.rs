@@ -41,12 +41,18 @@ pub fn render_scene(
     screen_width: u32,
     screen_height: u32,
 ) {
+    let mut z = distance;
+    while z > 1.0 {
+        // From back to front
+
+        z -= 1.0;
+    }
 }
 
 fn main() {
     // let clouds01 = image::DFImage::load("data/dfd1/CLOUDS01.PCX").unwrap();
-    // let dfd1_c = image::DFImage::load("data/dfd1/DFD1_C.JPG").unwrap();
-    // let dfd1_cm = image::DFImage::load("data/dfd1/DFD1_CM.TGA").unwrap();
+    let dfd1_c = image::DFImage::load(Path::new("data/dfd1/DFD1_C.JPG")).unwrap();
+    // let dfd1_cm = image::DFImage::load(Path::new("data/dfd1/DFD1_CM.TGA")).unwrap();
     let dfd1_d = image::DFImage::load(Path::new("data/dfd1/DFD1_D.PCX")).unwrap();
     // let dfd1_dm = image::DFImage::load("data/dfd1/DFD1_DM.PCX").unwrap();
     // let dfd1_m = image::DFImage::load("data/dfd1/DFD1_M.PCX").unwrap();
@@ -55,8 +61,8 @@ fn main() {
 
     let mut window = Window::new(
         "Open Delta",
-        dfd1_d.width as usize,
-        dfd1_d.height as usize,
+        dfd1_cm.width as usize,
+        dfd1_cm.height as usize,
         WindowOptions {
             resize: true,
             scale_mode: ScaleMode::Center,
@@ -71,7 +77,11 @@ fn main() {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         window
-            .update_with_buffer(&dfd1_d.data, dfd1_d.width as usize, dfd1_d.height as usize)
+            .update_with_buffer(
+                &dfd1_cm.data,
+                dfd1_cm.width as usize,
+                dfd1_cm.height as usize,
+            )
             .unwrap();
     }
 }

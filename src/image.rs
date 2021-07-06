@@ -1,6 +1,7 @@
+use image::io::Reader as ImageReader;
+use image::GenericImageView;
+use std::iter;
 use std::path::Path;
-use std::{io, iter};
-
 // Delta force inner image format
 pub struct DFImage {
     pub width: u16,
@@ -20,6 +21,9 @@ impl DFImage {
                 "jpg" => {
                     return DFImage::load_jpg(path);
                 }
+                "tga" => {
+                    return DFImage::load_tga(path);
+                }
                 _ => {
                     return Err("Not supported extension");
                 }
@@ -28,7 +32,6 @@ impl DFImage {
                 return Err("Path haven't extension");
             }
         }
-        return Err("Can't load image");
     }
 
     fn load_pcx(path: &Path) -> Result<Self, &'static str> {
@@ -68,11 +71,30 @@ impl DFImage {
         return Ok(DFImage {
             width,
             height,
-            data: u32_image
+            data: u32_image,
         });
     }
 
     fn load_jpg(path: &Path) -> Result<Self, &'static str> {
+        let img = ImageReader::open(path).unwrap().decode().unwrap();
+
+        let mut u32_image: Vec<u32> = Vec::new();
+        for pixel in img.as_rgb8().unwrap().pixels() {
+            let jpg_r = pixel.0[0];
+            let jpg_g = pixel.0[1];
+            let jpg_b = pixel.0[2];
+
+            // TODO(optim): Not very effective
+            u32_image.push(((jpg_r as u32) << 16) | ((jpg_g as u32) << 8) | (jpg_b as u32));
+        }
+        return Ok(DFImage {
+            width: img.width() as u16,
+            height: img.height() as u16,
+            data: u32_image,
+        });
+    }
+
+    fn load_tga(_path: &Path) -> Result<Self, &'static str> {
         return Err("Can't load image");
     }
 }

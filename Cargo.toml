@@ -5,4 +5,5 @@ edition = "2018"
 
 [dependencies]
 pcx = "0.2"
-minifb = "0.19.3"
+minifb = "0.19"
+image = "0.23"

@@ -3,6 +3,19 @@ use image::GenericImageView;
 use std::iter;
 use std::path::Path;
 // Delta force inner image format
+
+pub struct RGBColor {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl RGBColor {
+    pub fn as_u32(&self) -> u32 {
+        return ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32);
+    }
+}
+
 pub struct DFImage {
     pub width: u16,
     pub height: u16,
@@ -10,6 +23,16 @@ pub struct DFImage {
 }
 
 impl DFImage {
+    pub fn get_rgb(&self, x: u16, y: u16) -> RGBColor {
+        let adress: u32 = x as u32 * y as u32 + x as u32;
+        let rgb_32 = self.data[adress as usize];
+        RGBColor {
+            g: (rgb_32 >> 16) as u8,
+            r: (rgb_32 >> 8) as u8,
+            b: rgb_32 as u8,
+        }
+    }
+
     // Can load PCX, TGA, JPG
     pub fn load(path: &Path) -> Result<Self, &'static str> {
         let extension = path.extension();
